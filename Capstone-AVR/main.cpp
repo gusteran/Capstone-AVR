@@ -59,13 +59,13 @@ void setupTimer() {
 
 ISR(TIMER0_OVF_vect) {
 	//cli();
-    PORTB ^= 1 << IR_LED;
+    PORTB |= 1 << IR_LED;
 	//microseconds++;
 	//sei();
 }
 
 ISR(TIMER0_COMP_vect) {
-	PORTB ^= 1 << IR_LED;
+	PORTB |= 1 << IR_LED;
 	//microseconds++;
 }
 
@@ -87,19 +87,21 @@ void setupDC() {
 	TCCR3B = (1 << WGM32) | (1 << CS30);
 	
 	//pwm ramp up only mode (count TCNT3 up to OCR3A then stop); 8-bit
-	TCCR3A = (1 << WGM30) | (1 << COM3A1) | (1 << COM3A1);
+	TCCR3A = (1 << WGM30) | (1 << COM3A1) | (1 << COM3B1);
 	
 	//define counter pre-set value (this is what we start counting up from)
 	TCNT3 = 0;
 	
 	//define value to count up to (no pre scaler used so can be from 1 to 254)
 	OCR3A = 200;
+	OCR3B = 200;
 
 	//the closer TCNT3 is set to 200, the closer we are to 100% duty cycle
 	
 	//set pins 5 and 6 (PE3 and PE4) only as output
 	//DDRE= 0b00011000;
-	DDRE |= (1 << LEFT_DC) | (1 << RIGHT_DC);
+	DDRE |= (1 << LEFT_DC);
+	DDRE |= (1 << RIGHT_DC);
 	
 }
 
@@ -116,6 +118,13 @@ void stopMotors() {
 	PORTG &= ~(1 << MOTOR_ENABLE);
 }
 
+void setMotorSpeeds(int left, int right){
+	left = (left < 0) ? 0 : (left > 255) ? 255 : left;
+	right = (left < 0) ? 0 : (right > 255) ? 255 : right;
+	OCR3A = left;
+	OCR3B = right;
+}
+
 int main(void) {
 	microseconds = 0;
 	unsetLED();
@@ -130,6 +139,7 @@ int main(void) {
 	DDRB = (1 << IR_LED);
 	setupTimer();
 	setupDC();
+	int speed = 150;
     while (1) {
 		//cli();
 		//if(microseconds > 10){
@@ -138,8 +148,10 @@ int main(void) {
 		//}
 		//sei();
 		driveMotors();
+		setMotorSpeeds(speed, speed);
 		_delay_ms(2000);
 		stopMotors();
+		speed += 15;
 		_delay_ms(500);
     }
     return 1;
