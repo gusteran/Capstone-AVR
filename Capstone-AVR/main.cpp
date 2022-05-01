@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <util/delay.h>
+
+#include "robot.h"
 //#include <xc.h>
 
 // There is no byte in c so I use uint8_t
@@ -25,6 +27,7 @@ volatile bool LED_ON = false;
 
 // TODO: Implement the micros function for myself
 unsigned long micros() { return TICKS_TO_MICROSECONDS * (ticks + 1000 * kiloTicks); }
+unsigned long millis() { return TICKS_TO_MICROSECONDS * (ticks / 500 + kiloTicks); }
 
 void setLED() {
     PORTB |= 1 << IR_LED;
@@ -58,12 +61,6 @@ void setupTimer() {
     TIMSK = (1 << OCIE0);
 }
 
-// ISR(TIMER0_OVF_vect) {
-////cli();
-// PORTB |= 1 << IR_LED;
-////microseconds++;
-////sei();
-//}
 
 ISR(TIMER0_COMP_vect) {
     // PORTB ^= 1 << IR_LED;
@@ -85,7 +82,7 @@ byte drive = 0;
 
 #define MOTOR_ENABLE PG3
 
-void setupDC() {
+void setupDCMotors() {
     // pre scaler set to (1)
     TCCR3B = (1 << WGM32) | (1 << CS30);
 
@@ -128,6 +125,18 @@ void setMotorSpeeds(int left, int right) {
     OCR3B = right;
 }
 
+#ifndef REAL_ROBOT
+
+int main(void){
+	Robot * robot = new Robot();
+	robot->setup();
+	sei();
+	while(1){
+		robot->loop();
+	}
+}
+
+#else 
 int main(void) {
     unsigned long nextTime = 0;
     //unsetLED();
@@ -142,7 +151,7 @@ int main(void) {
     sei();
     DDRB = (1 << IR_LED);
     setupTimer();
-    setupDC();
+    setupDCMotors();
     // int speed = 150;
     bool waiting = false;
     unsigned long delay = 1000000;
@@ -171,3 +180,4 @@ int main(void) {
     }
     return 1;
 }
+#endif

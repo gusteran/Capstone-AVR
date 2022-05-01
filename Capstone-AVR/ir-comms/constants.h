@@ -35,6 +35,8 @@
 
 #define EE_ADDR_ID 0
 
+//static uint8_t ROBOT_ID;
+
 
 
 #endif

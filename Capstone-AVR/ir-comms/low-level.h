@@ -21,6 +21,7 @@ void startIR();
 void stopIR();
 
 unsigned long micros();
+unsigned long millis();
 void setupTimer();
 
 void setupDCMotors();
