@@ -28,6 +28,8 @@ class Receiver {
     bool hasPacket();
     Packet getPacket();
 
+	static volatile uint32_t receiverTicks;
+
    private:
     static Receiver instance;
     Receiver() : packet() {}

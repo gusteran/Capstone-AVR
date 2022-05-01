@@ -157,19 +157,31 @@ byte * message = (byte *) "Right";
 byte fullPacket[32] = "This string is the entire buff!";
 bool send = true;
 
+//#define RECEIVER_ENABLE
+
 void Robot::loop() {
+    transmitter.loop();
+    receiver->loop();
+	if(!(PINF & (1 << FRONT_IR))){
+		setMotorSpeeds(motorSpeed, motorSpeed);
+		//nextTime = millis() + 500;
+		runningMotors = true;
+		_delay_ms(500);
+	} else {
+		setMotorSpeeds(0, 0);
+	}
+    
+#ifdef RECEIVER_ENABLE
+    if (runningMotors && millis() > nextTime) {
+	    setMotorSpeeds(0, 0);
+	    runningMotors = false;
+    }
+
 	if(send && millis() > 2000 && !transmitter.hasPacket()){
-		transmitter.transmitPacket(fullPacket, sizeof(fullPacket));
+		//transmitter.transmitPacket(fullPacket, sizeof(fullPacket));
 		send = false;
 	}
-    transmitter.loop();
-#ifdef RECEIVER_ENABLE
-if (runningMotors && millis() > nextTime) {
-	setMotorSpeeds(0, 0);
-	runningMotors = false;
-}
-    receiver->loop();
-    if (receiver->hasPacket()) {
+	if (receiver->hasPacket()) {
         recv_pack = receiver->getPacket();
         if (recv_pack.getMessageString()[0] == 'L') {
             // move(FORWARD_SPEED);

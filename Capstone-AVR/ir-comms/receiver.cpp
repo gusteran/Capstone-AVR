@@ -1,9 +1,13 @@
 #include "receiver.h"
 
 Receiver Receiver::instance;
+volatile uint32_t Receiver::receiverTicks = 0;
 
 void Receiver::setup() {
-	PORTF |= (1 << FRONT_IR) | (1 << BACK_IR) | (1 << LEFT_IR) | (1 << RIGHT_IR);
+	DDRF &= ~(1 << FRONT_IR);
+ DDRF &= ~(1 << BACK_IR);
+DDRF &= ~(1 << LEFT_IR);
+DDRF &= ~(1 << RIGHT_IR);
     lock = TransmissionLock::getInstance();
 }
 
@@ -27,8 +31,8 @@ void Receiver::loop() {
     currentRead = PINF & (1 << FRONT_IR);
 
     if (lastRead != currentRead) {
-        uint32_t time = micros() - myTime;
-        myTime = micros();
+        uint32_t time = receiverTicks;
+        receiverTicks = 0;
 
         bool falling = currentRead;
 
@@ -37,14 +41,14 @@ void Receiver::loop() {
         }
 
         lastRead = currentRead;
-    } else if (lock->getState() == ACTIVE_LISTENING && micros() - myTime > START_BIT * 3) {
+    } else if (lock->getState() == ACTIVE_LISTENING && receiverTicks > START_BIT * 3) {
         lock->endListening();
         state = WAITING;
     }
 }
 
 void Receiver::handleSignal(uint32_t time) {
-    if (time > START_BIT - OFFSET * 5 && time < START_BIT + OFFSET) {
+    if (time > START_BIT - OFFSET * 4 && time < START_BIT + OFFSET) {
         state = READING;
         packet = Packet();
         return;

@@ -69,9 +69,9 @@ ISR(TIMER0_COMP_vect) {
         ticks = 0;
         ++kiloTicks;
     }
+	++Receiver::receiverTicks;
 	if(Transmitter::transmitterTicks > 0){
 		--Transmitter::transmitterTicks;
-		//transmitterTicks /= 4;
 	}
 }
 
@@ -121,12 +121,17 @@ void disableMotors() {
 }
 
 void setMotorSpeeds(int left, int right) {
-    left = (left < 0) ? 0 : (left > 255) ? 255
-                                         : left;
-    right = (left < 0) ? 0 : (right > 255) ? 255
-                                           : right;
-    OCR3A = left;
-    OCR3B = right;
+	if(left || right ){
+		enableMotors();
+		left = (left < 0) ? 0 : (left > 255) ? 255
+		: left;
+		right = (left < 0) ? 0 : (right > 255) ? 255
+		: right;
+		OCR3A = left;
+		OCR3B = right;
+	} else {
+		disableMotors();
+	}
 }
 
 #define REAL_ROBOT

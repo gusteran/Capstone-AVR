@@ -1,6 +1,7 @@
 #pragma once
 
 #include <avr/eeprom.h>
+#include <util/delay.h>
 
 #include "ir-comms/receiver.h"
 #include "ir-comms/transmitter.h"
