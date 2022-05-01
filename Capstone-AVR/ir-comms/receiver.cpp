@@ -1,6 +1,6 @@
 #include "receiver.h"
 
-Receiver *Receiver::instance;
+Receiver Receiver::instance;
 
 void Receiver::setup() {
 	PORTF |= (1 << FRONT_IR) | (1 << BACK_IR) | (1 << LEFT_IR) | (1 << RIGHT_IR);

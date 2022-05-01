@@ -10,7 +10,7 @@ void Robot::setupRobotID() {
 }
 void Robot::setup() {
     setupRobotID();
-    transmitter->setup();
+    transmitter.setup();
     receiver->setup();
 	setupTimer();
 	setupDCMotors();
@@ -34,7 +34,7 @@ inline void Robot::generatePacket() {
     robotData.angle = 0;//turnAngle / turnAngle1;
 
     byte* data = (byte*)&robotData;
-    transmitter->transmitPacket(data, sizeof(robotData), 2);
+    transmitter.transmitPacket(data, sizeof(robotData), 2);
 }
 
 inline RobotFields Robot::decryptPacket(byte* message) {
@@ -59,18 +59,18 @@ const int TIME_BETWEEN_SPEAKING = 1000;
 const int Kp = 25;
 
 void Robot::stateMachine() {
-    //if (lock->getState() == PASSIVE || transmitter->canCompute()) turnSensorUpdate();
+    //if (lock->getState() == PASSIVE || transmitter.canCompute()) turnSensorUpdate();
     switch (state) {
         case SPINNING:
             // if (lock->getState() == PASSIVE) turnSensorUpdate();
-            transmitter->loop();
+            transmitter.loop();
             receiver->loop();
             // if (millis() > nextTime) {
             //     nextTime = millis() + 500;
             //     Serial.print("Angle ");
             //     Serial.println(turnAngle / turnAngle1);
             // }
-            if (!transmitter->hasPacket() && millis() > nextTime) {
+            if (!transmitter.hasPacket() && millis() > nextTime) {
                 generatePacket();
                 nextTime = millis() + TIME_BETWEEN_SPEAKING * 2.5;
             }
@@ -86,9 +86,9 @@ void Robot::stateMachine() {
             break;
         case COMMUNICATING:
             // if (lock->getState() == PASSIVE) turnSensorUpdate();
-            transmitter->loop();
+            transmitter.loop();
             receiver->loop();
-            if (!transmitter->hasPacket() && millis() > nextTime) {
+            if (!transmitter.hasPacket() && millis() > nextTime) {
                 generatePacket();
                 nextTime = millis() + TIME_BETWEEN_SPEAKING;
             }
@@ -116,9 +116,9 @@ void Robot::stateMachine() {
             }
             break;
         case PREPARE_TO_MOVE:
-            transmitter->loop();
+            transmitter.loop();
             receiver->loop();
-            if (!transmitter->hasPacket() && millis() > nextTime) {
+            if (!transmitter.hasPacket() && millis() > nextTime) {
                 generatePacket();
                 nextTime = millis() + TIME_BETWEEN_SPEAKING;
             }
@@ -141,9 +141,9 @@ void Robot::stateMachine() {
             }
             break;
         case FINISH:
-            transmitter->loop();
+            transmitter.loop();
             receiver->loop();
-            if (!transmitter->hasPacket() && millis() > nextTime) {
+            if (!transmitter.hasPacket() && millis() > nextTime) {
                 generatePacket();
                 nextTime = millis() + TIME_BETWEEN_SPEAKING;
             }
@@ -153,13 +153,21 @@ void Robot::stateMachine() {
 
 bool runningMotors = false;
 int motorSpeed = 225;
+byte * message = (byte *) "Right";
+byte fullPacket[32] = "This string is the entire buff!";
+bool send = true;
 
 void Robot::loop() {
-    if (runningMotors && millis() > nextTime) {
-        setMotorSpeeds(0, 0);
-        runningMotors = false;
-    }
-    transmitter->loop();
+	if(send && millis() > 2000 && !transmitter.hasPacket()){
+		transmitter.transmitPacket(fullPacket, sizeof(fullPacket));
+		send = false;
+	}
+    transmitter.loop();
+#ifdef RECEIVER_ENABLE
+if (runningMotors && millis() > nextTime) {
+	setMotorSpeeds(0, 0);
+	runningMotors = false;
+}
     receiver->loop();
     if (receiver->hasPacket()) {
         recv_pack = receiver->getPacket();
@@ -178,4 +186,5 @@ void Robot::loop() {
 			runningMotors = true;
         }
     }
+#endif
 }

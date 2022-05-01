@@ -20,7 +20,7 @@
 #define byte uint8_t
 static volatile unsigned long ticks = 0;
 static volatile unsigned long kiloTicks = 0;
-const int TICKS_TO_MICROSECONDS = 15;
+const int TICKS_TO_MICROSECONDS = 16 * 8;
 volatile bool LED_ON = false;
 
 #define IR_LED PB7
@@ -45,7 +45,7 @@ void startIR() {
     TCCR2 = (1 << WGM21) | (1 << COM20) | (1 << CS20);
 }
 
-inline void setupIR() {
+void setupIR() {
     // cli();
     OCR2 = 110;
     DDRB = (1 << IR_LED);
@@ -55,20 +55,24 @@ inline void setupIR() {
 }
 
 void setupTimer() {
-    OCR0 = 10;
+    OCR0 = 102; //16 microseconds
     TCNT0 = 0;
-    TCCR0 = (1 << WGM01) | (1 << CS00);
+    TCCR0 = (1 << WGM01) | (1 << CS01);
     TIMSK = (1 << OCIE0);
 }
 
-
+//volatile uint32_t Transmitter::transmitterTicks = 0;
 ISR(TIMER0_COMP_vect) {
     // PORTB ^= 1 << IR_LED;
-    ticks++;
+    ++ticks;
     if (ticks >= 1000) {
         ticks = 0;
-        kiloTicks++;
+        ++kiloTicks;
     }
+	if(Transmitter::transmitterTicks > 0){
+		--Transmitter::transmitterTicks;
+		//transmitterTicks /= 4;
+	}
 }
 
 // define a drive variable for the output compare register to turn on when reached
@@ -125,42 +129,42 @@ void setMotorSpeeds(int left, int right) {
     OCR3B = right;
 }
 
-#ifndef REAL_ROBOT
+#define REAL_ROBOT
+
+#ifdef REAL_ROBOT
 
 int main(void){
-	Robot * robot = new Robot();
-	robot->setup();
+	Robot robot;
+	robot.setup();
 	sei();
 	while(1){
-		robot->loop();
+		robot.loop();
 	}
+	return 1;
 }
 
 #else 
 int main(void) {
-    unsigned long nextTime = 0;
-    //unsetLED();
-    //_delay_ms(100);
-    //setLED();
-    //_delay_ms(500);
-    //unsetLED();
-    //_delay_ms(1000);
-    //setupIR();
-    //_delay_ms(500);
-    //stopIR();
+    unsigned long long nextTime = 0;
+    unsetLED();
+    _delay_ms(100);
+    setLED();
+    _delay_ms(500);
+    unsetLED();
+    _delay_ms(1000);
+    setupIR();
+    _delay_ms(500);
+    stopIR();
     sei();
     DDRB = (1 << IR_LED);
     setupTimer();
     setupDCMotors();
     // int speed = 150;
-    bool waiting = false;
-    unsigned long delay = 1000000;
+    unsigned long delay = 100;
     while (1) {
-        if (waiting && micros() > nextTime) {
-            waiting = false;
-        } else {
+        if (millis() > nextTime) {
             PORTB ^= (1 << IR_LED);
-            nextTime = micros() + delay;
+            nextTime = millis() + delay;
         }
 
         // cli();

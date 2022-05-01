@@ -13,10 +13,7 @@ enum CommState {
 class TransmissionLock {
    public:
     static TransmissionLock * getInstance() {
-        if (TransmissionLock::instance == nullptr) {
-            instance = new TransmissionLock();
-        }
-        return instance;
+        return &instance;
     }
 
     /**
@@ -43,7 +40,7 @@ class TransmissionLock {
     CommState getState() { return commState; }
 
    private:
-    static TransmissionLock* instance;
+    static TransmissionLock instance;
     TransmissionLock(){
         commState = CommState::PASSIVE;
         lockTime = 0;

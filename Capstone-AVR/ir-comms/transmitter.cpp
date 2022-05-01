@@ -1,15 +1,17 @@
 #include "transmitter.h"
 
-byte hello[14] = "Hello, world!";
-char bString[20] = "That's the B button";
-byte fullPacket[32] = "This string is the entire buff!";
+//byte hello[14] = "Hello, world!";
+//char bString[20] = "That's the B button";
+//byte fullPacket[32] = "This string is the entire buff!";
+
+volatile uint32_t Transmitter::transmitterTicks = 0;
 
 Transmitter::Transmitter() : packet() {
 }
 
 void Transmitter::setup() {
     state = WAITING_FOR_PACKET;
-    packet.init(hello, sizeof(hello));
+    //packet.init(hello, sizeof(hello));
     lock = TransmissionLock::getInstance();
 }
 
@@ -39,15 +41,6 @@ bool Transmitter::hasPacket(){
 }
 
 void Transmitter::loop() {
-#ifdef IR_TRANSMISSION_PRINTS
-    if (millis() > lastResetTime + BIT_CHECK_INTERVAL) {
-        Serial.print("Bits sent: ");
-        Serial.println(bitSent);
-        bitSent = 0;
-        lastResetTime = millis();
-        lock->printLockState();
-    }
-#endif
     switch (state) {
         case WAITING_FOR_PACKET:
             if (hasPacket()) {
@@ -62,15 +55,10 @@ void Transmitter::loop() {
             }
             if (!lock->startBlast()) return;
             transmitTime = START_BIT;
-            lowTime = ONE_BIT;
+            lowTime = ONE_BIT; // temp to check start bit timing
             state = TRANSMIT;
             break;
         case SET_DELAY:
-#ifdef IR_TRANSMISSION_PRINTS
-            bitSent++;
-#endif
-            // if (buffer[bufNum++]) {
-            // if (bufNum % 8 == 0) Serial.print(" ");
             if (packet.getNextBit()) {
                 transmitTime = ONE_BIT;
                 // lowTime = ZERO_BIT;
@@ -84,24 +72,26 @@ void Transmitter::loop() {
             state = TRANSMIT;
         case TRANSMIT:
             startIR();
-            nextTransmitTime = micros() + transmitTime;
+            //nextTransmitTime = micros() + transmitTime;
+			transmitterTicks = transmitTime;
             state = WAIT;
             nextState = FALL;
             break;
         case WAIT:
-            if (nextTransmitTime < micros()) {
+            if (transmitterTicks < 2) {
                 stopIR();
                 state = nextState;
             }
             break;
         case FALL:
-            nextTransmitTime = micros() + lowTime;
+            //nextTransmitTime = micros() + lowTime;
+			transmitterTicks = lowTime;
             state = WAIT;
             nextState = packet.atEnd() ? END : SET_DELAY;
             break;
         case END:
             packetDuplicates--;
-            nextTransmitTime = micros() + (packetDuplicates > 0) ? START_BIT : START_BIT * 3;
+            transmitterTicks = (packetDuplicates > 0) ? START_BIT : START_BIT * 3;
             packet.resetBit();
             hasFreshPacket = false;
             lock->endEmitting();

@@ -4,6 +4,7 @@
 
 #include "ir-comms/receiver.h"
 #include "ir-comms/transmitter.h"
+#include "ir-comms/constants.h"
 
 enum RobotState : uint8_t {
     SPINNING,
@@ -41,7 +42,7 @@ class Robot {
     inline RobotFields decryptPacket(byte *message);
 	
     Receiver *receiver = Receiver::getInstance();
-    Transmitter *transmitter = new Transmitter();
+    Transmitter transmitter;
     RobotState state = SPINNING;
     // RobotState nextState = SPINNING;
 

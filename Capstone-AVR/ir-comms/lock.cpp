@@ -1,6 +1,6 @@
 #include "lock.h"
 
-TransmissionLock * TransmissionLock::instance;
+TransmissionLock TransmissionLock::instance;
 
 void TransmissionLock::endListening() {
     if (commState == ACTIVE_LISTENING) {

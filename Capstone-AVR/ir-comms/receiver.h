@@ -15,10 +15,7 @@ enum ReceiverState {
 class Receiver {
    public:
     static Receiver * getInstance() {
-        if (Receiver::instance == nullptr) {
-            instance = new Receiver();
-        }
-        return instance;
+        return &instance;
     }
     // Receiver(Receiver const &);
     // void operator=(Receiver const &);
@@ -32,7 +29,7 @@ class Receiver {
     Packet getPacket();
 
    private:
-    static Receiver* instance;
+    static Receiver instance;
     Receiver() : packet() {}
     TransmissionLock * lock = TransmissionLock::getInstance();
 

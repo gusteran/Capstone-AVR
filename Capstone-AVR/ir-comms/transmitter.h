@@ -6,6 +6,8 @@
 #include "packet.h"
 #include "lock.h"
 
+
+
 enum TransmitState {
     WAITING_FOR_PACKET,
     START,
@@ -23,7 +25,7 @@ class Transmitter {
     void loop();
     void startBit();
 
-    bool canCompute() { return state == WAIT && nextTransmitTime > micros() + 1100; }
+    //bool canCompute() { return state == WAIT && nextTransmitTime > micros() + 1100; }
 
     void transmitPacket(byte * message, uint32_t size = PACKET_SIZE);
     void transmitPacket(byte * message, uint32_t size, uint16_t transmitTimes);
@@ -35,6 +37,8 @@ class Transmitter {
         state = START;
     }
 
+	static volatile uint32_t transmitterTicks;
+
    private:
     bool hasFreshPacket = false;
     int16_t packetDuplicates = 0;
@@ -44,9 +48,9 @@ class Transmitter {
     TransmitState nextState;
     Packet packet;
 
-    uint32_t nextTransmitTime = 0;
-    uint32_t transmitTime = 0;
-    uint32_t lowTime = 0;
+    //uint64_t nextTransmitTime = 0;
+    uint64_t transmitTime = 0;
+    uint64_t lowTime = 0;
     bool blockTransmit = false;
 
     uint64_t lastResetTime = 0;
